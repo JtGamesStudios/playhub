@@ -1,0 +1,17 @@
+{
+  "name": "playhub",
+  "version": "0.1.0",
+  "description": "PlayHub — catálogo de jogos estilo Netflix, PWA + wrapper Android via Capacitor",
+  "scripts": {
+    "android:add": "npx cap add android",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/android": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  }
+}

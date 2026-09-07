@@ -1,0 +1,9 @@
+{
+  "appId": "com.jtgamesstudios.playhub",
+  "appName": "PlayHub",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

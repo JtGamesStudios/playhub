@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PlayHub</title>
+<meta name="theme-color" content="#0a0b12">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0b12;
+    --surface: #14151f;
+    --surface-hi: #1c1e2b;
+    --line: #262838;
+    --text: #eef0f6;
+    --muted: #8b8fa3;
+    --accent: #ff5a3c;
+    --accent-2: #35e0c9;
+    --kids: #ffcf3f;
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh; overflow-x:hidden;
+  }
+  .pixel{font-family:'Press Start 2P',monospace;}
+  .screen{display:none; min-height:100vh; animation:fadein .35s ease;}
+  .screen.active{display:block;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  /* ---- Update banner ---- */
+  #update-banner{
+    display:none; position:fixed; top:0; left:0; right:0; z-index:100;
+    background:var(--accent-2); color:#06231f; font-size:12px; font-weight:700;
+    text-align:center; padding:8px;
+  }
+  #update-banner.show{display:block;}
+
+  /* ---- Profiles ---- */
+  #profiles{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; padding:24px;
+    background:radial-gradient(600px 300px at 50% -10%, rgba(255,90,60,0.10), transparent), var(--bg);
+  }
+  .logo{font-size:15px; letter-spacing:1px; color:var(--accent); margin-bottom:38px;}
+  .logo span{color:var(--accent-2);}
+  .profiles-title{font-size:20px; font-weight:700; margin-bottom:28px;}
+  .profile-grid{display:flex; gap:20px; flex-wrap:wrap; justify-content:center; max-width:520px;}
+  .profile-card{
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    cursor:pointer; border:none; background:none; color:var(--text);
+    font-family:inherit; padding:6px;
+  }
+  .avatar{
+    width:84px; height:84px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center; font-size:30px;
+    border:2px solid transparent; transition:border-color .15s, transform .15s;
+  }
+  .profile-card:hover .avatar{border-color:var(--accent); transform:translateY(-2px);}
+  .avatar.add{background:var(--surface-hi); border:2px dashed var(--line); font-size:24px; color:var(--muted);}
+  .profile-name{font-size:13px; color:var(--muted);}
+  .profile-card.kids-tag .profile-name{color:var(--kids);}
+  .auth-row{margin-top:34px; font-size:11px; color:var(--muted); display:flex; gap:8px; align-items:center;}
+  .auth-btn{
+    background:var(--surface-hi); border:1px solid var(--line); color:var(--text);
+    padding:8px 14px; border-radius:8px; font-size:12px; cursor:pointer;
+  }
+
+  /* ---- Browse ---- */
+  #browse{padding-bottom:90px;}
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between; padding:14px 18px;
+    background:linear-gradient(to bottom, rgba(10,11,18,.95), rgba(10,11,18,0));
+  }
+  .topbar .logo{margin:0; font-size:12px;}
+  .who{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted);}
+  .who .dot{width:26px; height:26px; border-radius:7px;}
+  .kids-banner{
+    display:none; margin:0 18px 14px; padding:8px 12px;
+    background:rgba(255,207,63,0.12); border:1px solid rgba(255,207,63,0.35);
+    border-radius:8px; font-size:12px; color:var(--kids);
+  }
+  .kids-banner.show{display:block;}
+  .row{margin:22px 0;}
+  .row h2{font-size:14px; font-weight:700; margin:0 0 12px 18px;}
+  .row-track{display:flex; gap:12px; overflow-x:auto; padding:2px 18px 8px; scroll-snap-type:x proximity;}
+  .row-track::-webkit-scrollbar{display:none;}
+  .card{
+    scroll-snap-align:start; flex:0 0 128px; cursor:pointer; border:none; padding:0;
+    background:none; color:inherit; font-family:inherit; text-align:left;
+  }
+  .cover{
+    width:128px; height:128px; border-radius:var(--radius);
+    display:flex; align-items:flex-end; padding:8px; font-size:11px; font-weight:800;
+    line-height:1.25; color:rgba(255,255,255,.95); position:relative; overflow:hidden;
+    transition:transform .15s; border:1px solid var(--line);
+  }
+  .card:hover .cover{transform:scale(1.04);}
+  .cover .badge{
+    position:absolute; top:6px; right:6px; font-size:8px; padding:3px 5px;
+    border-radius:4px; background:rgba(0,0,0,.45); letter-spacing:.4px;
+  }
+  .cover .badge.livre{background:rgba(53,224,201,.85); color:#06231f;}
+  .cover-text{background:linear-gradient(to top, rgba(0,0,0,.55), transparent 65%); position:absolute; inset:0;}
+  .card-meta{font-size:10px; color:var(--muted); margin-top:6px;}
+  .bottomnav{
+    position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-around;
+    background:var(--surface); border-top:1px solid var(--line); padding:10px 0 14px; z-index:30;
+  }
+  .navitem{display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px; color:var(--muted);}
+  .navitem.active{color:var(--accent-2);}
+  .navitem .ic{font-size:16px;}
+  .empty-state{padding:60px 24px; text-align:center; color:var(--muted); font-size:13px;}
+
+  /* ---- Modal ---- */
+  #modal-backdrop{
+    position:fixed; inset:0; background:rgba(6,6,10,.72); display:none;
+    align-items:flex-end; justify-content:center; z-index:50;
+  }
+  #modal-backdrop.show{display:flex;}
+  .modal{
+    width:100%; max-width:520px; background:var(--surface); border:1px solid var(--line);
+    border-radius:16px 16px 0 0; max-height:88vh; overflow-y:auto; animation:slideup .25s ease;
+  }
+  @keyframes slideup{from{transform:translateY(30px); opacity:.4;} to{transform:translateY(0); opacity:1;}}
+  .modal-hero{height:150px; display:flex; align-items:flex-end; padding:16px; position:relative;}
+  .modal-hero .grad{position:absolute; inset:0; background:linear-gradient(to top, rgba(20,21,31,1), transparent 70%);}
+  .modal-hero h3{position:relative; margin:0; font-size:19px;}
+  .modal-close{
+    position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%;
+    background:rgba(0,0,0,.4); border:none; color:#fff; font-size:16px; cursor:pointer; z-index:2;
+  }
+  .modal-body{padding:16px 18px 22px;}
+  .meta-row{display:flex; gap:10px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-bottom:12px;}
+  .meta-row span{border:1px solid var(--line); padding:3px 8px; border-radius:6px;}
+  .modal-desc{font-size:13px; line-height:1.55; color:#c7cad8; margin-bottom:18px;}
+  .play-btn{
+    width:100%; padding:13px; background:var(--accent); color:#1a0a05; border:none;
+    border-radius:9px; font-size:14px; font-weight:800; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .play-btn:disabled{opacity:.5; cursor:not-allowed;}
+  .note{
+    margin-top:12px; font-size:11px; color:var(--muted); background:var(--surface-hi);
+    border:1px solid var(--line); padding:10px 12px; border-radius:8px;
+  }
+
+  /* ---- Player placeholder ---- */
+  #player{
+    display:none; position:fixed; inset:0; background:#000; z-index:60;
+    flex-direction:column; align-items:center; justify-content:center; color:#fff;
+    text-align:center; padding:24px;
+  }
+  #player.show{display:flex;}
+  .scanlines{
+    position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(to bottom, rgba(255,255,255,.03) 0px, rgba(255,255,255,.03) 1px, transparent 2px, transparent 3px);
+  }
+  .player-exit{
+    margin-top:22px; padding:10px 18px; background:var(--surface); border:1px solid var(--line);
+    color:var(--text); border-radius:8px; font-size:12px; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<div id="update-banner">Novo catálogo disponível — puxe pra atualizar</div>
+
+<!-- ================= PROFILE SELECT ================= -->
+<div id="profiles" class="screen active">
+  <div class="logo pixel">PLAY<span>HUB</span></div>
+  <div class="profiles-title">Quem vai jogar?</div>
+  <div class="profile-grid" id="profile-grid"></div>
+  <div class="auth-row">
+    <span id="auth-status">Modo local (sem conta)</span>
+    <button class="auth-btn" onclick="stubGoogleSignIn()">Entrar com Google</button>
+  </div>
+</div>
+
+<!-- ================= BROWSE / CATALOG ================= -->
+<div id="browse" class="screen">
+  <div class="topbar">
+    <div class="logo pixel">PLAY<span>HUB</span></div>
+    <div class="who">
+      <span id="who-name"></span>
+      <div class="dot" id="who-dot"></div>
+    </div>
+  </div>
+  <div id="kids-banner" class="kids-banner">Perfil infantil — mostrando apenas jogos classificação Livre</div>
+  <div id="catalog"></div>
+  <div class="bottomnav">
+    <div class="navitem active"><span class="ic">🏠</span>Início</div>
+    <div class="navitem"><span class="ic">🆕</span>Novidades</div>
+    <div class="navitem"><span class="ic">🔍</span>Buscar</div>
+    <div class="navitem" onclick="backToProfiles()"><span class="ic">👤</span>Perfil</div>
+  </div>
+</div>
+
+<!-- ================= MODAL ================= -->
+<div id="modal-backdrop" onclick="if(event.target===this) closeModal()">
+  <div class="modal">
+    <div class="modal-hero" id="modal-hero">
+      <div class="grad"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h3 id="modal-title">Título</h3>
+    </div>
+    <div class="modal-body">
+      <div class="meta-row" id="modal-meta"></div>
+      <div class="modal-desc" id="modal-desc"></div>
+      <button class="play-btn" id="play-btn" onclick="playGame()">▶ Jogar</button>
+      <div class="note" id="modal-note"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PLAYER PLACEHOLDER ================= -->
+<div id="player">
+  <div class="scanlines"></div>
+  <div class="pixel" style="font-size:11px; color:var(--accent-2); margin-bottom:14px;">CARREGANDO ROM...</div>
+  <div id="player-title" style="font-size:20px; font-weight:800;"></div>
+  <div style="font-size:12px; color:var(--muted); margin-top:10px; max-width:280px;">
+    Core alvo: <span id="player-core"></span> — a integração real do emulador ainda não está plugada aqui.
+  </div>
+  <button class="player-exit" onclick="closePlayer()">Sair</button>
+</div>
+
+<script>
+/* =========================================================
+   PLAYHUB v1 — app shell
+   - Perfis: hoje em localStorage; estrutura já compatível
+     com troca futura por Firestore (mesmo padrão do Box Clube:
+     Google Sign-In + doc por usuário).
+   - Catálogo: carregado de ./catalog.json (arquivo externo),
+     pra permitir atualização semanal sem mexer no app.
+   - Player: launchGame() é o ÚNICO ponto que precisa ser
+     substituído por uma integração real de emulador
+     (RetroArch/libretro core, ou similar). Hoje é um stub.
+========================================================= */
+
+const STORAGE_KEYS = {
+  profiles: 'playhub.profiles',
+  catalogVersion: 'playhub.catalogVersion',
+};
+
+let CATALOG = null;
+let PROFILES = [];
+let activeProfile = null;
+
+/* ---------- Profiles (local-first) ---------- */
+function loadProfiles(){
+  const raw = localStorage.getItem(STORAGE_KEYS.profiles);
+  if(raw){
+    PROFILES = JSON.parse(raw);
+  } else {
+    PROFILES = [
+      {id:'p1', name:'Jonatha', kids:false, color:'135deg,#3d3aff,#7b5cff', icon:'🎮'},
+      {id:'p2', name:'Kids', kids:true, color:'135deg,#ffcf3f,#ff9a3c', icon:'⭐'},
+    ];
+    saveProfiles();
+  }
+}
+function saveProfiles(){
+  localStorage.setItem(STORAGE_KEYS.profiles, JSON.stringify(PROFILES));
+}
+function renderProfiles(){
+  const grid = document.getElementById('profile-grid');
+  grid.innerHTML = PROFILES.map(p => `
+    <button class="profile-card ${p.kids ? 'kids-tag' : ''}" onclick="selectProfile('${p.id}')">
+      <div class="avatar" style="background:linear-gradient(${p.color});">${p.icon}</div>
+      <div class="profile-name">${p.name}</div>
+    </button>
+  `).join('') + `
+    <button class="profile-card" onclick="addProfile()">
+      <div class="avatar add">+</div>
+      <div class="profile-name">Adicionar</div>
+    </button>
+  `;
+}
+function addProfile(){
+  const name = prompt('Nome do novo perfil:');
+  if(!name) return;
+  const kids = confirm('Este é um perfil infantil (Kids)?');
+  const colors = ['135deg,#ff5a3c,#ff8a3c','135deg,#1f6feb,#39c0ff','135deg,#0f3d3a,#0fbfae','135deg,#5a2a83,#a13a6b'];
+  PROFILES.push({
+    id:'p'+Date.now(),
+    name, kids,
+    color: kids ? '135deg,#ffcf3f,#ff9a3c' : colors[Math.floor(Math.random()*colors.length)],
+    icon: kids ? '⭐' : '🕹️',
+  });
+  saveProfiles();
+  renderProfiles();
+}
+function stubGoogleSignIn(){
+  // TODO integração real: mesmo fluxo do Box Clube
+  // (@codetrix-studio/capacitor-google-auth no nativo,
+  // Firebase Auth + Firestore por usuário na web).
+  alert('Login com Google ainda não integrado nesta v1 — perfis hoje são só locais.');
+}
+
+/* ---------- Catalog ---------- */
+async function loadCatalog(){
+  const res = await fetch('./catalog.json', {cache:'no-store'});
+  CATALOG = await res.json();
+  const lastVersion = localStorage.getItem(STORAGE_KEYS.catalogVersion);
+  if(lastVersion && lastVersion !== CATALOG.version){
+    showUpdateBanner();
+  }
+  localStorage.setItem(STORAGE_KEYS.catalogVersion, CATALOG.version);
+}
+function showUpdateBanner(){
+  const b = document.getElementById('update-banner');
+  b.classList.add('show');
+  setTimeout(() => b.classList.remove('show'), 4000);
+}
+function renderCatalog(){
+  const el = document.getElementById('catalog');
+  el.innerHTML = '';
+  const isKids = activeProfile.kids;
+  let anyRendered = false;
+  CATALOG.sections.forEach(section => {
+    if(isKids && !section.kidsOk) return;
+    const items = isKids ? section.items.filter(g => g.rating === 'Livre') : section.items;
+    if(items.length === 0) return;
+    anyRendered = true;
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<h2>${section.title}</h2><div class="row-track">${items.map(cardHTML).join('')}</div>`;
+    el.appendChild(row);
+  });
+  if(!anyRendered){
+    el.innerHTML = '<div class="empty-state">Nenhum jogo disponível pra esse perfil ainda.</div>';
+  }
+}
+function cardHTML(g){
+  const badgeClass = g.rating === 'Livre' ? 'livre' : '';
+  return `
+    <button class="card" onclick='openModal(${JSON.stringify(g)})'>
+      <div class="cover" style="background:linear-gradient(${g.coverGradient});">
+        <span class="badge">${g.platform}</span>
+        <div class="cover-text"></div>
+        <span style="position:relative;">${g.name}</span>
+        <span class="badge ${badgeClass}" style="right:auto; left:6px; top:6px;">${g.rating}</span>
+      </div>
+      <div class="card-meta">${g.year} · ${g.platform}</div>
+    </button>`;
+}
+
+/* ---------- Modal & player stub ---------- */
+function openModal(g){
+  document.getElementById('modal-hero').style.background = `linear-gradient(${g.coverGradient})`;
+  document.getElementById('modal-title').textContent = g.name;
+  document.getElementById('modal-meta').innerHTML = `<span>${g.year}</span><span>${g.platform}</span><span>${g.rating}</span>`;
+  document.getElementById('modal-desc').textContent = g.description;
+  document.getElementById('modal-backdrop').dataset.current = JSON.stringify(g);
+  const playBtn = document.getElementById('play-btn');
+  const note = document.getElementById('modal-note');
+  if(g.playable && g.romUrl){
+    playBtn.disabled = false;
+    playBtn.textContent = '▶ Jogar';
+    note.textContent = '';
+  } else {
+    playBtn.disabled = false; // still clickable to show the stub player screen
+    playBtn.textContent = '▶ Jogar (modo teste)';
+    note.textContent = `Sem ROM associada ainda (core previsto: ${g.core}). O clique aqui já aciona o mesmo caminho de código que vai chamar o emulador de verdade.`;
+  }
+  document.getElementById('modal-backdrop').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('modal-backdrop').classList.remove('show');
+}
+function playGame(){
+  const g = JSON.parse(document.getElementById('modal-backdrop').dataset.current);
+  launchGame(g);
+  closeModal();
+}
+// ÚNICO ponto a substituir por integração real de emulador.
+function launchGame(g){
+  document.getElementById('player-title').textContent = g.name;
+  document.getElementById('player-core').textContent = g.core || 'não definido';
+  document.getElementById('player').classList.add('show');
+  // TODO: quando romUrl + core estiverem prontos, chamar aqui
+  // a ponte nativa (Capacitor plugin) que inicia o core libretro
+  // com romUrl, e usar g.saveSlot pra sincronizar o save na nuvem.
+}
+function closePlayer(){
+  document.getElementById('player').classList.remove('show');
+}
+
+/* ---------- Navigation ---------- */
+function selectProfile(id){
+  activeProfile = PROFILES.find(p => p.id === id);
+  document.getElementById('who-name').textContent = activeProfile.name;
+  const dot = document.getElementById('who-dot');
+  dot.style.background = `linear-gradient(${activeProfile.color})`;
+  document.getElementById('kids-banner').classList.toggle('show', activeProfile.kids);
+  renderCatalog();
+  show('browse');
+}
+function backToProfiles(){
+  show('profiles');
+}
+function show(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ---------- Boot ---------- */
+(async function init(){
+  loadProfiles();
+  renderProfiles();
+  await loadCatalog();
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>
